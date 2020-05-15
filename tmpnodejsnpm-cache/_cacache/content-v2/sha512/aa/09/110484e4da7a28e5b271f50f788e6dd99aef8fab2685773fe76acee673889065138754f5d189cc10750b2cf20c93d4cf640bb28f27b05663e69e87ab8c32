@@ -1,0 +1,1 @@
+{"name":"end-stream","dist-tags":{"latest":"0.1.0"},"versions":{"0.1.0":{"name":"end-stream","version":"0.1.0","dependencies":{"write-stream":"~0.4.3"},"devDependencies":{"tap":"~0.3.1"},"dist":{"shasum":"32003f3f438a2b0143168137f8fa6e9866c81ed5","tarball":"https://registry.npmjs.org/end-stream/-/end-stream-0.1.0.tgz"}}},"modified":"2012-11-18T01:52:44.865Z"}
