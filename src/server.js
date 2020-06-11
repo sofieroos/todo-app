@@ -1,4 +1,5 @@
 import { Server, Model, Response } from "miragejs";
+import dayjs from "dayjs";
 
 export function makeServer({ environment = "development" } = {}) {
   const server = new Server({
@@ -50,17 +51,22 @@ export function makeServer({ environment = "development" } = {}) {
     },
 
     seeds(server) {
+      const date = dayjs().add(1, "day");
+
       server.create("todo", {
         todo: "Make todo application",
-        completed: false,
+        completed: null,
+        deadline: null,
       });
       server.create("todo", {
         todo: "Construct Cypress introduction",
-        completed: false,
+        completed: null,
+        deadline: date,
       });
       server.create("todo", {
         todo: "Perform cypress workshop",
-        completed: false,
+        deadline: null,
+        completed: null,
       });
     },
   });

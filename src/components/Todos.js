@@ -8,16 +8,28 @@ import {
   FormControlLabel,
   IconButton,
   Typography,
+  Tooltip,
 } from "@material-ui/core";
-import { Add as AddIcon, Delete as DeleteIcon } from "@material-ui/icons";
+import { DateTimePicker, MuiPickersUtilsProvider } from "@material-ui/pickers";
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  Event as EventIcon,
+} from "@material-ui/icons";
+import dayjs from "dayjs";
+
+import DayjsUtils from "@date-io/dayjs";
 
 export const Todos = () => {
   const classes = useStyles();
 
   const [todos, setTodos] = useState([]);
   const [load, setLoad] = useState(false);
+  const [selectedDate, handleDateChange] = useState(null);
   const [hasError, setErrors] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const textInput = useRef(null);
+  const initialDate = dayjs();
 
   function getTodos() {
     fetch(`/api/todos`)
@@ -36,7 +48,8 @@ export const Todos = () => {
     if (todo && todo.length > 0) {
       const newTodo = {
         todo: todo,
-        completed: false,
+        completed: null,
+        deadline: selectedDate,
       };
 
       fetch(`/api/todos`, {
@@ -58,15 +71,17 @@ export const Todos = () => {
     const id = e.target.name;
     const checked = e.target.checked;
 
+    const completedValue = checked ? Date.now() : null;
+
     setTodos(
       todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: checked } : todo
+        todo.id === id ? { ...todo, completed: completedValue } : todo
       )
     );
 
     fetch(`/api/todos/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ completed: checked }),
+      body: JSON.stringify({ completed: completedValue }),
     })
       .then((res) => {
         if (res.status !== 200) {
@@ -97,24 +112,32 @@ export const Todos = () => {
     getTodos();
   }, []);
 
+  useInterval(() => {
+    const todosToDelete = checkExpired(todos);
+    todosToDelete.forEach((id) => {
+      deleteTodo(id);
+    });
+
+    getTodos();
+  }, 6000);
+
   return !hasError ? (
     <div className={classes.root}>
       <Paper className={classes.container}>
         <Grid container direction="column">
           <Paper variant="outlined" className={classes.addTodoContainer}>
             <Grid
-              item
-              xs
               container
               direction="row"
               justify="space-between"
               alignItems="center"
+              className={classes.height}
             >
-              <Grid item>
+              <Grid item md={10} xs={10}>
                 <InputBase
                   id="newTodo"
                   placeholder="Add Todo"
-                  data-testid="add-todo-input"
+                  fullWidth={true}
                   inputProps={{
                     onKeyDown: (e) =>
                       e.key === "Enter" ? addTodo(e.target.value) : null,
@@ -123,6 +146,41 @@ export const Todos = () => {
                 />
               </Grid>
               <Grid item>
+                <Tooltip
+                  placement="top"
+                  arrow
+                  title={
+                    selectedDate !== null
+                      ? dayjs(selectedDate).format("YYYY-MM-DD HH:mm")
+                      : ""
+                  }
+                >
+                  <IconButton
+                    onClick={() => setIsOpen(true)}
+                    data-testid="deadline-input"
+                  >
+                    <EventIcon
+                      fontSize="small"
+                      color={selectedDate !== null ? "primary" : "action"}
+                    />
+                  </IconButton>
+                </Tooltip>
+                <MuiPickersUtilsProvider utils={DayjsUtils}>
+                  <DateTimePicker
+                    autoOk
+                    clearable
+                    ampm={false}
+                    open={isOpen}
+                    onOpen={() => setIsOpen(true)}
+                    onClose={() => setIsOpen(false)}
+                    disablePast
+                    initialFocusedDate={initialDate}
+                    value={selectedDate}
+                    onChange={handleDateChange}
+                    label=""
+                    TextFieldComponent={() => null}
+                  />
+                </MuiPickersUtilsProvider>
                 <IconButton
                   onClick={() => addTodo(textInput.current.value)}
                   aria-label="add"
@@ -142,27 +200,46 @@ export const Todos = () => {
                   container
                   direction="row"
                   justify="space-between"
+                  alignItems="center"
                   spacing={1}
+                  data-cy="todoItem"
                 >
-                  <Grid item>
+                  <Grid item md={8} xs={8}>
                     <FormControlLabel
                       value={todo.todo}
                       control={
                         <Checkbox
-                          checked={todo.completed}
+                          checked={todo.completed !== null}
                           onChange={completeTodo}
                           name={todo.id}
                         />
                       }
                       label={todo.todo}
-                      data-cy="todoItem"
                     />
                   </Grid>
-                  <Grid>
+                  {todo.deadline !== null ? (
+                    <Grid item>
+                      <Grid
+                        container
+                        justify="space-between"
+                        spacing={1}
+                        alignItems="center"
+                      >
+                        <Grid item>
+                          <EventIcon fontSize="small" color="action" />
+                        </Grid>
+                        <Grid item>
+                          <Typography variant="body1" color="textSecondary">
+                            {dayjs(todo.deadline).format("MMM D H:mm")}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  ) : null}
+                  <Grid item>
                     <IconButton
                       id={todo.id}
                       aria-label="delete"
-                      data-cy="deleteItem"
                       onClick={() => deleteTodo(todo.id)}
                     >
                       <DeleteIcon />
@@ -204,6 +281,9 @@ const useStyles = makeStyles((theme) => ({
     paddingLeft: theme.spacing(2),
     marginBottom: theme.spacing(3),
   },
+  height: {
+    height: "48px",
+  },
   fullWidth: {
     width: "100%",
   },
@@ -214,3 +294,36 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
 }));
+
+// https://overreacted.io/making-setinterval-declarative-with-react-hooks/
+function useInterval(callback, delay) {
+  const savedCallback = useRef();
+
+  // Remember the latest function.
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  // Set up the interval.
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+    }
+    if (delay !== null) {
+      let id = setInterval(tick, delay);
+      return () => clearInterval(id);
+    }
+  }, [delay]);
+}
+
+function checkExpired(todos) {
+  const todosToDelete = [];
+  todos.forEach((todo) => {
+    const dateOfExpiration = dayjs(todo.completed).add(1, "day");
+    const now = new Date();
+    if (todo.completed !== null && dateOfExpiration.isBefore(dayjs(now))) {
+      todosToDelete.push(todo.id);
+    }
+  });
+  return todosToDelete;
+}

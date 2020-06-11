@@ -1,0 +1,9 @@
+## Additional functionality
+
+1. Clear input field when task has been added
+
+2. Deadline for task
+
+3. Remove task after a specific amount of time has passed since completion
+
+4. Add multiple todo-lists

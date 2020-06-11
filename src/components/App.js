@@ -4,12 +4,14 @@ import { ThemeProvider } from "@material-ui/styles";
 import { green, grey } from "@material-ui/core/colors";
 import { Header } from "./Header";
 import { Todos } from "./Todos";
+import { Test } from "./Test";
 
 export const App = () => {
   return (
     <ThemeProvider theme={theme}>
-      <Header />
-      <Todos />
+      <Test />
+      {/* <Header />
+      <Todos /> */}
     </ThemeProvider>
   );
 };
