@@ -44,7 +44,9 @@ export const Todos = () => {
       });
   }
 
-  function addTodo(todo) {
+  function addTodo(todoUntrimmed) {
+    const todo = todoUntrimmed.trim();
+
     if (todo && todo.length > 0) {
       const newTodo = {
         todo: todo,
