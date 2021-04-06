@@ -17,7 +17,6 @@ import {
   Event as EventIcon,
 } from "@material-ui/icons";
 import dayjs from "dayjs";
-
 import DayjsUtils from "@date-io/dayjs";
 
 export const Todos = () => {
@@ -31,7 +30,7 @@ export const Todos = () => {
   const textInput = useRef(null);
   const initialDate = dayjs();
 
-  function getTodos() {
+  const getTodos = () => {
     fetch(`/api/todos`)
       .then((res) => res.json())
       .then((res) => {
@@ -42,9 +41,9 @@ export const Todos = () => {
         setErrors(err);
         setLoad(true);
       });
-  }
+  };
 
-  function addTodo(todoUntrimmed) {
+  const addTodo = (todoUntrimmed) => {
     const todo = todoUntrimmed.trim();
 
     if (todo && todo.length > 0) {
@@ -67,9 +66,9 @@ export const Todos = () => {
           setErrors(err);
         });
     }
-  }
+  };
 
-  function completeTodo(e) {
+  const completeTodo = (e) => {
     const id = e.target.name;
     const checked = e.target.checked;
 
@@ -94,9 +93,9 @@ export const Todos = () => {
         setErrors(err);
         getTodos();
       });
-  }
+  };
 
-  function deleteTodo(id) {
+  const deleteTodo = (id) => {
     fetch(`/api/todos/${id}`, {
       method: "DELETE",
     })
@@ -108,7 +107,7 @@ export const Todos = () => {
       .catch((err) => {
         setErrors(err);
       });
-  }
+  };
 
   useEffect(() => {
     getTodos();
